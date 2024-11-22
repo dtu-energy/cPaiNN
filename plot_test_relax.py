@@ -10,12 +10,12 @@ import itertools
 from tqdm import tqdm
 from ase import units
 import seaborn as sns
-from PAINN_charge.relax import ML_Relaxer
+from cPaiNN.relax import ML_Relaxer
 import pandas as pd
 
 # Setup paths
 # Model directory (can be a list of directories)
-model_dir = '/home/energy/mahpe/Playground/Universal_FF/Polyanion_bader_magmom_stress_512_4' 
+model_dir = '/home/energy/mahpe/Playground/Universal_FF/ML_models_stress/Polyanion_bader_magmom_stress_512_4' 
 
 # Set class for ML calculator
 relax_cell = True
@@ -25,23 +25,23 @@ per_atom = True # If True, the energy is per atom
 fmax = 0.05 # Maximum force for relaxation
 steps = 2000 # Maximum steps for relaxation
 
+# Define the machine learning potentials
 ml_model = {}
 ml_model['PAINN'] = ML_Relaxer(calc_name='painn_charge',calc_paths=model_dir,
                           optimizer=optimizer,relax_cell=relax_cell,device=device_global)
 
-#ml_model['chgnet'] = ML_Relaxer(calc_name='chgnet',calc_paths=None,
-#                          optimizer=optimizer,relax_cell=relax_cell,device=device_global)
+ml_model['chgnet'] = ML_Relaxer(calc_name='chgnet',calc_paths=None,
+                          optimizer=optimizer,relax_cell=relax_cell,device=device_global)
 
-#ml_model['Mace'] = ML_Relaxer(calc_name='mace_large',calc_paths=None,
-#                          optimizer=optimizer,relax_cell=relax_cell,device=device_global)
-#ml_model['m3gnet'] = ML_Relaxer(calc_name='m3gnet',calc_paths=None,
-#                          optimizer=optimizer,relax_cell=relax_cell,device=device_global)
+ml_model['Mace'] = ML_Relaxer(calc_name='mace_large',calc_paths=None,
+                          optimizer=optimizer,relax_cell=relax_cell,device=device_global)
+ml_model['m3gnet'] = ML_Relaxer(calc_name='m3gnet',calc_paths=None,
+                          optimizer=optimizer,relax_cell=relax_cell,device=device_global)
+
 
 ## OUTCAR file
-list_root_dir = {'Olivine':'/home/energy/mahpe/NaMPO4_olivine_FeMnCoNi/test_set/relaxation_mix_states',
-                 'Maricite':'/home/energy/mahpe/NaMPO4_maricite/test_set/relaxation_mix_states',
-                 'Silicate':'/home/energy/mahpe/Na2FeSiO4_silicate_FeMnNiCo/test_set/4mix_states',
-                 'Alluadite':'/home/energy/mahpe/Na2Fe2SO4/test_set/4mix_states'}
+list_root_dir = {'FePO4_init':'NEB_example/FePO4/initial/OUTCAR',
+                 'FePO4_final':'NEB_example/FePO4/final/OUTCAR',}
 
 file = 'OUTCAR'
 

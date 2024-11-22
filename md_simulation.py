@@ -16,66 +16,21 @@ import toml
 from ase.db import connect
 import argparse
 from ase.calculators.calculator import CalculationFailed
-from chemical_values import*
 
 def get_arguments(arg_list=None):
     parser = argparse.ArgumentParser(
         description="General Active Learning", fromfile_prefix_chars="+"
     )
     parser.add_argument(
-        "--db_dir",
+        "--model_name",
         type=str,
-        help="Path to the data base",
+        help="Name of the machine learning potential",
     )
     parser.add_argument(
-        "--db_ids", 
-        type=int, 
-        help="Id with chemical formula in the database for this particular structure",
-    )
-    parser.add_argument(
-        "--M_ion", 
+        "--model_path", 
         type=str, 
-        help="Metalic ion for this particular structure",
-    )
-    parser.add_argument(
-        "--Job_name",
-        type=str,
-        help="Name of the releaxation to run",
-    )
-    parser.add_argument(
-        "--oszicar",
-        type=bool,
-        default=True,
-        help="Save all the oszicar file",
-    )
-    parser.add_argument(
-        "--procar",
-        type=bool,
-        default=False,
-        help="Save all the procar file",
-    )
-    parser.add_argument(
-        "--chgcar",
-        type=bool,
-        default=False,
-        help="Save all the chgcar file",
-    )
-    parser.add_argument(
-        "--outcar",
-        type=bool,
-        default=False,
-        help="Save all the outcar file",
-    )
-    parser.add_argument(
-        "--max_unconverged",
-        type=int,
-        default=50,
-        help="Maximuk number of unconverged steps in MD before it stops",
-    )
-    parser.add_argument(
-        "--cfg",
-        type=str,
-        help="Directory of the config file",
+        help="Path to the personal machine learning potential",
+        default=None,
     )
     return parser.parse_args(arg_list)
 
@@ -108,37 +63,6 @@ def main():
     #relax_directory = f'{root_dir}/md_sim'
     relaxsim_directory =os.getcwd()
 
-    # Vasp calculator
-    vasp_params = params['VASP']
-    tot_magmom = 0
-    for a in atom:
-        if a == 'Fe':
-            a.magmom = 5
-        if a == 'Co':
-            a.magmom = 4
-        print(a.symbol, a.magmom)
-        tot_magmom += a.magmom
-    if 'Fe' in atom.get_chemical_symbols():
-        tot_magmom = 20
-    elif 'Co' in atom.get_chemical_symbols():
-        tot_magmom = 16
-    vasp_params['nupdown'] = tot_magmom
-    vasp_params['nsw'] = 0
-    vasp_params['istart'] = 1 
-    
-    print(f'{name} has nupdown {tot_magmom}')
-
-    calc = Vasp(**vasp_params)
-    ldau_luj = {'ldau_luj':{}}
-    if type(M_ion)==str:
-        ldau_luj['ldau_luj'][M_ion] = {'L': 2, 'U': get_U_value(M_ion),'J':0}
-        print(f'{name} has L, U, J values: (2, {get_U_value(M_ion)}, 0)')
-    else:
-        for m in M_ion:
-             ldau_luj['ldau_luj'][m] = {'L': 2, 'U': get_U_value(m),'J':0}
-             print(f'{name} has L, U, J values: (2, {get_U_value(m)}, 0)')
-    calc.set(**ldau_luj)
-    
     # Set th VASP calcualtor
     atom.set_calculator(calc)
 
@@ -165,12 +89,6 @@ def main():
     
 
     # Set and attach MD_saver to save vasp output files each step in MD. It is also used to limit the MD simulation
-    if vasp_params['nelm']:
-        nelm = vasp_params['nelm']
-    else:
-        nelm = 60 # vasp default value
-    saver = MD_Saver(md, calc,nelm=nelm, max_unconverged=args.max_unconverged,root_dir=relaxsim_directory,backup_name="", 
-            oszicar=args.oszicar,procar=args.procar,chgcar=args.chgcar,outcar=args.outcar)
     md.attach(saver, interval=params_md['dump_step'])
 
     # Start MD simulation

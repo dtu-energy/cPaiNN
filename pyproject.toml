@@ -1,0 +1,35 @@
+[build-system]
+requires = [
+    "setuptools>=65",
+    "wheel"
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cPaiNN"
+dynamic = ["version"]
+authors = [{name = "Martin Hoffmann Petersen", email = "mahpe@dtu.dk"}]
+description = "Charge modification of the polarizable atom interaction neural network (cPaiNN) "
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "GPL v3.0"}
+classifiers = [
+    "Development Status :: 1 - Alpha",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Operating System :: OS Independent",
+]
+
+dependencies = [
+    "ase==3.23"
+    #"asap3==3.13.2",
+    #"torch<=2.1.2",
+    #"scipy==1.14.1",
+    #"numpy=1.26.4",
+    #"toml==0.10.2",
+    #"m3gnet==0.2.4",
+    #"chgnet==0.3.3",
+]
+
+[tool.setuptools.dynamic]
+version = {attr = "cPaiNN.__version__"}
