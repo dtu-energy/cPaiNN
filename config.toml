@@ -1,5 +1,8 @@
 cutoff = 4.0
 val_ratio = 0.1
+node_size = 64 
+num_interactions = 4
+output_dir = 'Polyanion_bader_magmom_stress_64_4
 dataset = 'Combined.xyz'
 max_steps = 1500000
 batch_size = 20

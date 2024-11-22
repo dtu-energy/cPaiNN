@@ -1,5 +1,5 @@
 from ase.calculators.calculator import Calculator, all_changes
-from data import AseDataReader
+from cPaiNN.data import AseDataReader
 import numpy as np
 from ase import Atoms
 import torch

@@ -53,7 +53,7 @@ class ML_Relaxer:
         self.calc_name = calc_name
         self.calc_paths = calc_paths
         self.device = device
-        self.calculator: Calculator = self.get_calc()    
+        self.calculator= self.get_calc()    
         self.relax_cell = relax_cell
     
     def predict(self, atoms: Atoms):
@@ -106,7 +106,7 @@ class ML_Relaxer:
         if isinstance(atoms, ExpCellFilter):
             atoms = atoms.atoms
         return {
-            "final_structure": atoms,#
+            "final_structure": atoms,
         }
     def get_calc(self):
         """ Get calculator from the given name
@@ -141,11 +141,11 @@ class ML_Relaxer:
                 model.load_state_dict(state_dict["model"],)    
                 models.append(model)
             if len(models)==1:
-                print('Using single PAINN_charge model')
+                print('Using single cPaiNN model')
                 ensemble = False
                 calc = MLCalculator(models[0])
             elif len(models)>1:
-                print('Using ensemble PAINN_charge model')
+                print('Using ensemble of cPaiNN models')
                 ensemble = True
                 calc = EnsembleCalculator(models)
             else:
@@ -159,24 +159,25 @@ class ML_Relaxer:
             calc = CHGNetCalculator(model=model,use_device=self.device)
         elif self.calc_name == 'mace_large':
             from mace.calculators import mace_mp
-            print('Using MACE large model')
+            print('Using Mace-MP-0 large model')
             calc = mace_mp(model="large", dispersion=False, default_dtype="float64", device=self.device)
         elif self.calc_name == 'mace_medium':
             from mace.calculators import mace_mp
-            print('Using MACE medium model')
+            print('Using Mace-MP-0 medium model')
             calc = mace_mp(model="medium", dispersion=False, default_dtype="float64", device=self.device)
         elif self.calc_name == 'mace_small':
             from mace.calculators import mace_mp
-            print('Using MACE small model')
+            print('Using Mace-MP-0 small model')
             calc = mace_mp(model="small", dispersion=False, default_dtype="float64", device=self.device)
         elif self.calc_name == 'mace_model':
             from mace.calculators import MACECalculator
-            print('Using MACE personal model')
+            print('Using Mace personal model')
             calc =  MACECalculator(model_paths=self.calc_paths,device=self.device, default_dtype="float64")
         
         elif self.calc_name == 'm3gnet':
             from m3gnet.models import Potential, M3GNet, M3GNetCalculator
             potential = Potential(M3GNet.load())
+            print('Using M3GNet model')
             calc = M3GNetCalculator(potential=potential, stress_weight=0.01)
         else:
             raise RuntimeError('Calculator not found!')
