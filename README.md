@@ -44,3 +44,7 @@ Nugded eleastic band (NEB) calculation of an ionic movement in an atomic structu
 ```bash
 python NEB.py
 ```
+
+When using the code cite: 
+
+The code is modfied from older version of PaiNN, so also cite: https://doi.org/10.1038/s41524-022-00863-y and https://doi.org/10.26434/chemrxiv-2024-p5t3l
