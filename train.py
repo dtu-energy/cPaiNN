@@ -328,7 +328,6 @@ def eval_model(model:PainnModel, dataloader:AseDataset, device:str, args:argpars
     count = 0
     test = 0
     # Loop over each batch
-    print(len(dataloader))
     for batch in dataloader:
         test += 1
         
@@ -363,25 +362,28 @@ def eval_model(model:PainnModel, dataloader:AseDataset, device:str, args:argpars
             device_batch['stress'] = torch.reshape(device_batch['stress'], (device_batch['energy'].shape[0], 3,3))
             stress_loss = criterion(out["stress"], device_batch["stress"]).item()
             
-            if test == len(dataloader):
+            #if test == len(dataloader):
             #    stress_loss = 0
-                print('Val_stress',out["stress"],device_batch["stress"])
-                print('Val_stress',out["stress"].shape,device_batch["stress"].shape)
-                print('Val_forces',out["forces"],device_batch["forces"])
-                print('Val_forces',out["forces"].shape,device_batch["forces"].shape)
-                print('Val_energy',out["energy"],device_batch["energy"])
-                print('Val_energy',out["energy"].shape,device_batch["energy"].shape)
-                print('Val_stress',out["stress"],device_batch["stress"])
-                print('Val_stress',out["stress"].shape,device_batch["stress"].shape)
+                #print('Val_stress',out["stress"],device_batch["stress"])
+                #print('Val_stress',out["stress"].shape,device_batch["stress"].shape)
+                #print('Val_forces',out["forces"],device_batch["forces"])
+                #print('Val_forces',out["forces"].shape,device_batch["forces"].shape)
+                #print('Val_energy',out["energy"],device_batch["energy"])
+                #print('Val_energy',out["energy"].shape,device_batch["energy"].shape)
+                #print('Val_stress',out["stress"],device_batch["stress"])
+                #print('Val_stress',out["stress"].shape,device_batch["stress"].shape)
         else:
             stress_loss = 0.0
 
         if isinstance(charge_key,list):
             magmom_loss = criterion(out['magmom'], device_batch['magmom']).item()
-            bader_charge_loss = criterion(out['bader_charge'], device_batch['bader_charge']).item()
+            bader_charge_loss = bader_charge_loss_func(out['bader_charge'], device_batch['bader_charge']).item()
             charge_loss = magmom_loss + bader_charge_loss
         elif isinstance(charge_key,str):
-            charge_loss = criterion(out[charge_key], device_batch[charge_key]).item()
+            if charge_key == 'bader_charge':
+                charge_loss = bader_charge_loss_func(out['bader_charge'], device_batch['bader_charge']).item()
+            else:
+                charge_loss = criterion(out[charge_key], device_batch[charge_key]).item()
         else:
             charge_loss = 0.0
 
@@ -440,8 +442,15 @@ def eval_model(model:PainnModel, dataloader:AseDataset, device:str, args:argpars
                 np.square(magmom_diff), axis=0
             )
 
-            bader_charge_targets = batch['bader_charge'].detach().cpu().numpy()
-            bader_charge_diff = bader_charge_targets - outputs['bader_charge']
+            bader_charge_targets = batch['bader_charge'].detach().cpu()
+            # Remove nan values
+            mask = ~torch.isnan(bader_charge_targets)
+            pred = bader_charge_targets[mask].numpy()
+            target = outputs['bader_charge'][mask]
+            if len(pred) == 0:
+                bader_charge_diff = torch.tensor(0.0)
+            else:
+                bader_charge_diff = target - pred
 
             bader_charge_running_ae += np.sum(np.abs(bader_charge_diff), axis=0)
             bader_charge_running_se += np.sum(
@@ -449,8 +458,19 @@ def eval_model(model:PainnModel, dataloader:AseDataset, device:str, args:argpars
             )
 
         elif isinstance(charge_key,str):
-            charge_targets = batch[charge_key].detach().cpu().numpy()
-            charge_diff = charge_targets - outputs[charge_key]
+            if charge_key == 'bader_charge':
+                charge_targets = batch[charge_key].detach().cpu().numpy()
+                # Remove nan values
+                mask = ~torch.isnan(charge_targets)
+                pred = charge_targets[mask]
+                target = outputs[charge_key][mask]
+                if len(pred) == 0:
+                    charge_diff = torch.tensor(0.0)
+                else:
+                    charge_diff = target - pred
+            else:
+                charge_targets = batch[charge_key].detach().cpu().numpy()
+                charge_diff = charge_targets - outputs[charge_key]
 
             charge_running_ae += np.sum(np.abs(charge_diff), axis=0)
             charge_running_se += np.sum(
@@ -488,6 +508,27 @@ def eval_model(model:PainnModel, dataloader:AseDataset, device:str, args:argpars
     evaluation['sqrt(val_loss)'] = np.sqrt(running_loss / count)
 
     return evaluation
+
+def bader_charge_loss_func(pred, target):
+    """
+    Compute the mean squared error between predicted and target bader charges.
+    The error function is simialr to torch.nn.MSELoss, but it ignores nan values.
+    Since the value is a mean over all contribution it means the loss is not affected by the loss of atoms in the training.
+    Args:
+        pred: Predicted bader charges
+        target: Target bader charges
+    Returns:
+        The mean squared error between predicted and target bader chargesW
+    """
+    # Remove nan values
+    mask = ~torch.isnan(target)
+    pred = pred[mask]
+    target = target[mask]
+    if len(pred) == 0:
+        return torch.tensor(0.0)
+    loss = torch.mean(torch.square(pred - target))
+
+    return loss
 
 def update_namespace(ns:argparse.Namespace, d:dict) -> None:
     """
@@ -678,28 +719,15 @@ def main():
                 k: v.to(device=device, non_blocking=True)
                 for (k, v) in batch_host.items()
             }
-            print('batch',batch.keys())
             # Reset gradient
             optimizer.zero_grad()
-            #print(batch['stress'].shape,batch['stress'])
-            #print(batch.keys())
-            #print('num_atoms',batch['num_atoms'].shape)
-            #print('forces',batch['forces'].shape)
-            #print('coord',batch['coord'].shape)
-            #print('elems',batch['elems'].shape)
-            #atch['cell'] = torch.reshape(batch['cell'], (args.batch_size, 3, 3))
-            #strain = torch.zeros_like(batch['cell'], requires_grad=True)
-            #batch['cell'] = batch['cell'] + torch.matmul(strain, batch['cell'])
             
             # Forward pass 
             outputs = net(batch)            
-            #print(outputs[charge_key].shape, outputs['energy'].shape, outputs['forces'].shape)
-            #print(batch[charge_key].shape, batch['energy'].shape, batch['forces'].shape)
-            
-            # Reshape stress tensor
-            
+          
             # Compute loss
             # Energy loss
+            print(bader_charge_loss_func(outputs['bader_charge'], batch['bader_charge']))
             energy_loss = criterion(outputs["energy"], batch["energy"])
 
             # Forces loss
@@ -719,14 +747,16 @@ def main():
             # Charge loss
             if isinstance(charge_key,list):
                 magmom_loss = criterion(outputs['magmom'], batch['magmom'])
-                bader_charge_loss = criterion(outputs['bader_charge'], batch['bader_charge'])
+                bader_charge_loss = bader_charge_loss_func(outputs['bader_charge'], batch['bader_charge'])
                 charge_loss = magmom_loss + bader_charge_loss
 
             elif isinstance(charge_key,str):
-                charge_loss = criterion(outputs[charge_key], batch[charge_key])
+                if charge_key == 'bader_charge':
+                    charge_loss = bader_charge_loss_func(outputs['bader_charge'], batch['bader_charge'])
+                else:
+                    charge_loss = criterion(outputs[charge_key], batch[charge_key])
             else:
                 charge_loss = 0.0
-
             # Total loss
             total_loss = (
                 args.forces_weight * forces_loss

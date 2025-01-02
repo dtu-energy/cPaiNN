@@ -52,6 +52,7 @@ class ML_Relaxer:
         self.opt_class: Optimizer = optimizer_obj
         self.calc_name = calc_name
         self.calc_paths = calc_paths
+        self.ensemble = False # False unless using ensemble of cPaiNN models
         self.device = device
         self.calculator= self.get_calc()    
         self.relax_cell = relax_cell
@@ -142,11 +143,11 @@ class ML_Relaxer:
                 models.append(model)
             if len(models)==1:
                 print('Using single cPaiNN model')
-                ensemble = False
+                self.ensemble = False
                 calc = MLCalculator(models[0])
             elif len(models)>1:
                 print('Using ensemble of cPaiNN models')
-                ensemble = True
+                self.ensemble = True
                 calc = EnsembleCalculator(models)
             else:
                 raise ValueError('No model found')

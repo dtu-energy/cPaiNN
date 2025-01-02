@@ -80,15 +80,27 @@ class AseDataReader:
         if isinstance(self.charge_key, list):
             magmom = torch.tensor(atoms.get_magnetic_moments(), dtype=torch.float)
             atoms_data['magmom'] = magmom
-            bader_charge = torch.tensor(atoms.arrays['bader_charge'], dtype=torch.float)
-            atoms_data['bader_charge'] = bader_charge
+            if 'bader_charge' in atoms.arrays:
+                bader_charge = torch.tensor(atoms.arrays['bader_charge'], dtype=torch.float)
+                atoms_data['bader_charge'] = bader_charge
+            else:
+                empty_array = np.zeros(len(atoms))
+                empty_array[:] = np.nan
+                atoms_data['bader_charge'] = torch.from_numpy(empty_array)
         elif isinstance(self.charge_key, str):
+            
             if self.charge_key == 'magmom':
                 magmom = torch.tensor(atoms.get_magnetic_moments(), dtype=torch.float)
                 atoms_data['magmom'] = magmom
+            
             if self.charge_key == 'bader_charge':
-                bader_charge = torch.tensor(atoms.arrays['bader_charge'], dtype=torch.float)
-                atoms_data['bader_charge'] = bader_charge
+                if 'bader_charge' in atoms.arrays:
+                    bader_charge = torch.tensor(atoms.arrays['bader_charge'], dtype=torch.float)
+                    atoms_data['bader_charge'] = bader_charge
+            else:
+                empty_array = np.zeros(len(atoms))
+                empty_array[:] = np.nan
+                atoms_data['bader_charge'] = torch.from_numpy(empty_array)
   
         return atoms_data
             
@@ -203,7 +215,7 @@ def cat_tensors(tensors: List[torch.Tensor])->torch.Tensor:
     if tensors[0].shape:
         return torch.cat(tensors)
     return torch.stack(tensors)
-
+# Takes the dict of properties for each atom and returns a total dict containing a concatenated tensor for each property
 def collate_atomsdata(atoms_data: List[dict], pin_memory=True):
     """
     Collate list of atoms data dictionaries into a dictionary of tensors
@@ -222,5 +234,5 @@ def collate_atomsdata(atoms_data: List[dict], pin_memory=True):
     else:
         pin = lambda x: x
         
-    collated = {k: cat_tensors(v) for k, v in dict_of_lists.items()}
+    collated = {k: cat_tensors(v) for k, v in dict_of_lists.items() }
     return collated
