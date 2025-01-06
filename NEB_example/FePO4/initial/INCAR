@@ -13,6 +13,7 @@ INCAR created by Atomic Simulation Environment
  ISIF = 2
  ISMEAR = 0
  ISPIN = 2
+ ISTART = 0
  ISYM = 0
  LMAXMIX = 4
  LORBIT = 12
@@ -28,4 +29,4 @@ INCAR created by Atomic Simulation Environment
  LDAUL = 2 -1 -1 -1
  LDAUU = 5.300 0.000 0.000 0.000
  LDAUJ = 0.000 0.000 0.000 0.000
- MAGMOM = 24*4.0000 121*0.0000
+ MAGMOM = 11*5.0000 1*4.0000 12*5.0000 121*0.0000
