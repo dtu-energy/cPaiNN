@@ -67,28 +67,28 @@ class MLCalculator(Calculator):
         )
         try:
             results["forces"] = (
-            model_results["forces"].detach().cpu().numpy() * self.forces_scale
+            model_results["forces"].type(torch.float64).detach().cpu().numpy() * self.forces_scale
             )
         except KeyError:
             pass    
         
         try:
             results["stress"] = (
-                model_results["stress"].detach().cpu().numpy()[0] * self.stress_scale
+                model_results["stress"].type(torch.float64).detach().cpu().numpy()[0] * self.stress_scale
             )
         except KeyError:
             pass
 
         try:
             results["magmoms"] = (
-                model_results["magmom"].detach().cpu().numpy() * self.charge_scale
+                model_results["magmom"].type(torch.float64).detach().cpu().numpy() * self.charge_scale
             )
         except KeyError:
             pass
 
         try:
             results["bader_charge"] = (
-                model_results["bader_charge"].detach().cpu().numpy()* self.charge_scale
+                model_results["bader_charge"].type(torch.float64).detach().cpu().numpy()* self.charge_scale
             )
         except KeyError:
             pass
