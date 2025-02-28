@@ -1,24 +1,25 @@
-cutoff = 4.0
-val_ratio = 0.1
-node_size = 64 
-num_interactions = 4
-output_dir = 'Polyanion_bader_magmom_stress_64_4
-dataset = 'Combined.xyz'
-max_steps = 1500000
-batch_size = 20
-initial_lr = 0.0001
-forces_weight = 0.98
-charge_weight = 0.1
-stress_weight = 1000
-log_interval = 2000
+##### Main parameters for training cPaiNN #####
+cutoff = 4.0     # Cutoff radius in Å for message interactions between atoms
+val_ratio = 0.1     # Ratio of the traning set used for validation
+node_size = 64     # The size of the hidden layers in the message pasing neural network
+num_interactions = 4     # The number of message updates in the message parsing neural network
+output_dir = 'Polyanion_bader_magmom_stress_64_4'     # The output directory, where the model files are safed
+dataset = 'Combined.xyz'     # The path to the training data. Must be in .xyz file, if bader charges should be trained
+max_steps = 1500000     # Maximum number of epochs
+batch_size = 20     # The batch size per epoch
+initial_lr = 0.0001     # The initial learning rate (will be updated based on the training loss during the training)
+forces_weight = 0.98     # The weight of the force loss
+charge_weight = 0.1     # The weight of the charge loss. The same loss weight is used for magnetic moment and bader charges
+stress_weight = 1000     # The weight of the stress loss. Is high on purpose because no scaling of the stress is included in the traning script
+log_interval = 2000     # The epoch interval for saving the 
 
-plateau_scheduler = true
-normalization = true 
-atomwise_normalization = true 
-stop_patience = 1000
+plateau_scheduler = true     # Using PyTorch ReduceLROnPlateau (true) or LambdaLR (false) to vary the learning rate based on the training loss 
+normalization = true      # Normalize the total energy based on the whole dataset (true) or not (false)
+atomwise_normalization = true      # Using atomwise normalization (true) or datawise normalization (false). The normalization parameter need to be true to use this parameter
+stop_patience = 1000     # Number of epochs without any training loss improvements before the traning terminates
 
-random_seed = 0
-compute_forces = true
-compute_stress = true
-compute_magmom=true
-compute_bader_charge=true
+random_seed = 0     # The random seed used by PyTorch
+compute_forces = true     # Train with forces
+compute_stress = true     # Train with stress
+compute_magmom=true     # Train with magnetic moments
+compute_bader_charge=true     # Train with bader charges (need to include a describtor. See bader_charge.ipynb)

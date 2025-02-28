@@ -459,7 +459,7 @@ def eval_model(model:PainnModel, dataloader:AseDataset, device:str, args:argpars
 
         elif isinstance(charge_key,str):
             if charge_key == 'bader_charge':
-                charge_targets = batch[charge_key].detach().cpu().numpy()
+                charge_targets = batch[charge_key].detach().cpu()
                 # Remove nan values
                 mask = ~torch.isnan(charge_targets)
                 pred = charge_targets[mask]
@@ -469,7 +469,7 @@ def eval_model(model:PainnModel, dataloader:AseDataset, device:str, args:argpars
                 else:
                     charge_diff = target - pred
             else:
-                charge_targets = batch[charge_key].detach().cpu().numpy()
+                charge_targets = batch[charge_key].detach().cpu()
                 charge_diff = charge_targets - outputs[charge_key]
 
             charge_running_ae += np.sum(np.abs(charge_diff), axis=0)
@@ -727,7 +727,6 @@ def main():
           
             # Compute loss
             # Energy loss
-            print(bader_charge_loss_func(outputs['bader_charge'], batch['bader_charge']))
             energy_loss = criterion(outputs["energy"], batch["energy"])
 
             # Forces loss

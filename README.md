@@ -20,7 +20,7 @@ To run the cPaiNN training use either the "run.sh" script or the commando:
 ```bash
 python train.py --cfg config.toml
 ```
-To train with atom charges represented using Bader charge analysis. One needs to save the bader charges into the Atom obects "array" dictionary. This can be done by writing "atom.array['bader_charge'] = bader_charges", wher ethe bader charges can be extracted from the ACF.file using either ['ASE'](https://wiki.fysik.dtu.dk/ase/) or the function "attach_bader_charges" in extract_data/utils.py
+To train with atom charges represented using Bader charge analysis. One needs to save the bader charges into the Atom obects "array" dictionary. This can be done by writing "atom.array["bader_charge"] = bader_charges", wher ethe bader charges can be extracted from the ACF.file using either ['ASE'](https://wiki.fysik.dtu.dk/ase/) or the function "attach_bader_charges" in extract_data/utils.py
 
 
 The pre-trained cPaiNN model on [the polyanaion sodium cathode dataset](https://doi.org/10.11583/DTU.27202446) can be found along with [the test dataset](https://doi.org/10.11583/DTU.27411681). The different name corresponds to the different properties it is trained on and the different hidden nodes and interaction layer used for the training.

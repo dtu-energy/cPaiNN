@@ -1,25 +1,14 @@
-from ase.db import connect
-from ase.io import read, write, Trajectory
+from ase.io import read, Trajectory
 import sys, os 
 import numpy as np
 import matplotlib.pyplot as plt
-from pathlib import Path
 import torch
-import itertools
-import json
-from tqdm import tqdm
-from ase import units
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 from ase.calculators.singlepoint import SinglePointCalculator
 from ase import Atoms
 
-from ase.optimize import FIRE, BFGS
-from datetime import datetime
-    
 from ase.neb import NEBTools,NEB
-from pathlib import Path
 from ase.neb import NEBTools
 from cPaiNN.relax import ML_Relaxer
 

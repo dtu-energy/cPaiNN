@@ -1,9 +1,9 @@
-from ase.data import atomic_numbers
 from ase.units import Bohr
 from ase import Atoms
 import pandas as pd
 from ase.io import read, write
-def attach_bader_charges(atoms:Atoms, ACF_path:str, displacement:float=1e-3)->Atoms:
+import numpy as np
+def attach_bader_charges(atoms:Atoms, ACF_path:str,zval:dict =None, displacement:float=1e-3)->Atoms:
     """
     Function used to attached the Bader charges to the atoms object.
     Note: The zval is given by the POTCAR from the VASP 6.4
@@ -11,15 +11,13 @@ def attach_bader_charges(atoms:Atoms, ACF_path:str, displacement:float=1e-3)->At
     Args:
         atoms (Atoms): ASE atoms object
         ACF_path (str): Path to the ACF.dat file
+        zval (dict): Dictionary with the zval for each element
         displacement (float): Displacement to test if the positions match
 
     Returns:
         atoms (Atoms): ASE atoms object with the Bader charges attached
     
     """
-
-    # Define the zval, given by the POTCAR from VASP 6.4 
-    zval = {'Na':7,'Fe':14,'O':6,'P':5,'Mn':13,'Co':9,'Ni':16,'Si':4,'S':6}
 
     # Load ACF file 
     df = pd.read_csv(ACF_path,skiprows=2,skipfooter=4,sep='\s+',header=None,index_col=0,engine='python') # Read the ACF.dat file and skip the first two lines and the last 4 lines
@@ -29,7 +27,11 @@ def attach_bader_charges(atoms:Atoms, ACF_path:str, displacement:float=1e-3)->At
 
     # Add charges and test if the positions match
     for i, a in enumerate(atoms):
-        a.charge = zval[a.symbol]- acf_charge[i] # Add the charge to the atom object
+        if zval is None:
+            a.charge = acf_charge[i] # Add the charge to the atom object
+        else:
+            a.charge = zval[a.symbol]- acf_charge[i] # Add the charge to the atom object
+        
         # Test if the atom positions match
         if displacement is not None:
             norm = np.linalg.norm(a.position - acf_pos[i])
