@@ -6,7 +6,7 @@ from cPaiNN.data import collate_atomsdata
 from cPaiNN.select import *
 from cPaiNN.kernel import *
 from cPaiNN.calculator import EnsembleCalculator
-
+#### Used for teh active learning workflow autocPaiNN #####
 class FeatureExtractor(nn.Module):
     def __init__(self, model: nn.Module):
         super().__init__()

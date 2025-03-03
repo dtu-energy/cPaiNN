@@ -1,6 +1,6 @@
 import torch
-from PaiNN.kernel import KernelMatrix
-
+from cPaiNN.kernel import KernelMatrix
+#### Used for teh active learning workflow autocPaiNN #####
 def max_diag(matrix: KernelMatrix, batch_size: int) -> torch.Tensor:
     """
     maximize uncertainty selection method

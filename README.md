@@ -6,26 +6,31 @@ To install cPaiNN use the commando, when in the repository;
 ```bash
 pip install .
 ```
-This will install cPaiNN along with [CHGNet](https://doi.org/10.1038/s42256-023-00716-3) and [M3GNet](https://doi.org/10.1038/s41524-024-01227-4).
 
+To install [CHGNet](https://doi.org/10.1038/s42256-023-00716-3) use the commands:
+```bash
+pip install chgnet
+```
+To install [M3GNet](https://doi.org/10.1038/s41524-024-01227-4) use the commands:
+```bash
+pip install m3gnet
+```
 To install [Mace-MP-0](https://doi.org/10.48550/arXiv.2401.00096) one need to use the commando:
 ```bash
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 ```
-Several examples in this repository used all four machine learning potentials and the loading of them can be inspected in "cPaiNN/relax.py"
-
+Installing the universal machine learning potentials is only nessesary if you want to use them. They can simply be out comment in the simulation scripts
 
 To train a cPaiNN model the path to the dataset needs to be added in the "config.toml" file. The dataset needs to be XYZ format, .traj format or any other format which can be read by the ase.io.read function. Tunning other parameters for the cPaiNN training are also done in the "config.toml" file. One can also parse the parameters directly in the training scripts as arguments. This will overwrite the parameters to in the "config.toml" file.
 To run the cPaiNN training use either the "run.sh" script or the commando:
 ```bash
 python train.py --cfg config.toml
 ```
-To train with atom charges represented using Bader charge analysis. One needs to save the bader charges into the Atom obects "array" dictionary. This can be done by writing "atom.array["bader_charge"] = bader_charges", wher ethe bader charges can be extracted from the ACF.file using either ['ASE'](https://wiki.fysik.dtu.dk/ase/) or the function "attach_bader_charges" in extract_data/utils.py
-
+To train with atom charges represented using Bader charge analysis. One needs to save the bader charges into the Atom obects "array" dictionary. This can be done by writing "atom.array["bader_charge"] = bader_charges", where the bader charges can be extracted from the ACF.file using either ['ASE'](https://wiki.fysik.dtu.dk/ase/) or the function "attach_bader_charges" in extract_data/utils.py. An example is provided in the jupyter notebook "attach_bader_charge.ipynb"
 
 The pre-trained cPaiNN model on [the polyanaion sodium cathode dataset](https://doi.org/10.11583/DTU.27202446) can be found along with [the test dataset](https://doi.org/10.11583/DTU.27411681). The different name corresponds to the different properties it is trained on and the different hidden nodes and interaction layer used for the training.
 
-cPaiNN can be used for different simualtion alone or along with other universal MLP. Adding new MLPs can easily be done as long as they have an ASE calcultator. Just add them in the "cPaiNN/relax.py" class object "ML_Relaxer.get_get_calc()" in the same way as the other MLPs are added.
+cPaiNN can be used for different simualtion alone or along with other universal machine learning potentials (MLP). Adding new MLPs can easily be done as long as they have an ASE calcultator. Just add them in the "cPaiNN/relax.py" class object "ML_Relaxer.get_get_calc()" in the same way as the other MLPs are added.
 Four examples are given in this repository:
 One-hot calculation of atomic structures:
 ```bash
@@ -46,6 +51,8 @@ Nugded eleastic band (NEB) calculation of an ionic movement in an atomic structu
 ```bash
 python NEB.py
 ```
+
+Along with the cPaiNN model we also included an active learning workflow called "autocPaiNN", where one can efficient and autonomously train a cPaiNN model for specific simualtion tasks. The active learning part is based on [Curator](https://doi.org/10.26434/chemrxiv-2024-p5t3l) and some additional scripts are included in the cPaiNN module to accomidate the use of active learning with cPaiNN. The github repository can be found here: https://github.com/dtu-energy/autocPaiNN
 
 When using the code cite: 
 
