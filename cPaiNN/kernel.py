@@ -1,5 +1,5 @@
 import torch
-
+#### Used for teh active learning workflow autocPaiNN #####
 class KernelMatrix:
     """Abstract kernel class used to calculate kernel matrix by giving a feature matrix"""
     def __init__(self, num_col: int):
