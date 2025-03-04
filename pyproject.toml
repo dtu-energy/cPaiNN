@@ -7,8 +7,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cPaiNN"
-version "1.0.0"
-dynamic = ["version"]
+version = "1.0.0"
 authors = [{name = "Martin Hoffmann Petersen", email = "mahpe@dtu.dk"}]
 description = "Charge modification of the polarizable atom interaction neural network (cPaiNN) "
 readme = "README.md"
