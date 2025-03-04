@@ -6,7 +6,8 @@ requires = [
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "cpainn"
+name = "cPaiNN"
+version "1.0.0"
 dynamic = ["version"]
 authors = [{name = "Martin Hoffmann Petersen", email = "mahpe@dtu.dk"}]
 description = "Charge modification of the polarizable atom interaction neural network (cPaiNN) "
@@ -23,16 +24,15 @@ classifiers = [
 dependencies = [
     "ase==3.23",
     "pandas==2.2.2",
-    "asap3==3.13.2",
+    "asap3",
     "torch<=2.1.2",
     "scipy==1.14.1",
-    "numpy=1.26.4",
+    "numpy==1.26.4",
     "toml==0.10.2",
-    "perqueue>=0.2.2"
-    #"m3gnet==0.2.4",
-    #"chgnet==0.3.3",
 ]
 
+[project.urls]
+Source = "https://github.com/dtu-energy/cPaiNN"
+
 [tool.setuptools]
-packages = ["cpainn"]
-package-dir = {"" = "src"}
+packages = ["cPaiNN"]

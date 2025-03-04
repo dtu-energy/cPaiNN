@@ -471,7 +471,7 @@ def eval_model(model:PainnModel, dataloader:AseDataset, device:str, args:argpars
             else:
                 charge_targets = batch[charge_key].detach().cpu()
                 charge_diff = charge_targets - outputs[charge_key]
-
+            charge_diff = charge_diff.detach().cpu().numpy()
             charge_running_ae += np.sum(np.abs(charge_diff), axis=0)
             charge_running_se += np.sum(
                 np.square(charge_diff), axis=0
