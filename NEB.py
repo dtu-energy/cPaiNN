@@ -38,7 +38,7 @@ def save_to_traj(atoms: Atoms, filename: str) -> None:
 
 # Import arguments
 model_name = 'cpainn'
-model_path = '/home/energy/mahpe/Playground/Universal_FF/ML_models_stress/Polyanion_bader_magmom_stress_512_4' 
+model_path = '/home/energy/mahpe/Published_code/additional_polyanion_cathode_dataset/Pretrained models/Polyanion_ionicsteps_magmom_bader_512_4' 
 system_name = 'FePO4'
 root_dir = '.'
 neb_folder_path = 'NEB_example/FePO4' # NEB olders with initial and final structures. Note that the folder should conatin a "initial" and "final" folder with the initial and final structures in OUTCAR format

@@ -106,6 +106,10 @@ class ML_Relaxer:
         optimizer.run(fmax=fmax, steps=steps)
         if isinstance(atoms, ExpCellFilter):
             atoms = atoms.atoms
+
+        if 'cpainn' in self.calc_name:
+            atoms = self.predict(atoms)
+
         return {
             "final_structure": atoms,
         }

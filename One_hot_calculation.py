@@ -22,7 +22,7 @@ def get_energy(traj,E_ml,element_diff):
 
 # Setup paths
 # Model directory (can be a list of directories)
-model_dir = '/home/energy/mahpe/Playground/Universal_FF/ML_models_stress/Polyanion_bader_magmom_stress_512_4'
+model_dir = '/home/energy/mahpe/Published_code/additional_polyanion_cathode_dataset/Pretrained models/Polyanion_ionicsteps_magmom_bader_512_4'
 device_global = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 # Define the machine learning potential calcualtors (Note I call the calculators from each ML_relaxer class)
