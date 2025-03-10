@@ -36,8 +36,8 @@ Source = "https://github.com/dtu-energy/cPaiNN"
 [tool.setuptools]
 packages = ["cPaiNN"]
 
-[tool.setuptools.package-data]
-cPaiNN = ["scripts/*"]
+#[tool.setuptools.package-data]
+#cPaiNN = ["scripts/*"]
 
-[project.scripts]
-bader_charge = "cPaiNN.scripts.bader_charge"
+#[project.scripts]
+#bader_charge = "cPaiNN.scripts.bader_charge"

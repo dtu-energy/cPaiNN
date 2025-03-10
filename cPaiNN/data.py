@@ -49,13 +49,13 @@ class AseDataReader:
         
         # Get neighborlist
         if atoms.pbc.any():
-            pairs, n_diff = self.get_neighborlist(atoms)
+            pairs, n_diff = self.get_neighborlist(atoms)                
             atoms_data['cell'] = torch.tensor(atoms.cell[:], dtype=torch.float)
         else:
             pairs, n_diff = self.get_neighborlist_simple(atoms)
             
         # Add neighborlist to atoms_data
-        atoms_data['pairs'] = torch.from_numpy(pairs)
+        atoms_data['pairs'] = torch.from_numpy(pairs).int()
         atoms_data['n_diff'] = torch.from_numpy(n_diff).float()
         atoms_data['num_pairs'] = torch.tensor([pairs.shape[0]])
         
@@ -97,10 +97,10 @@ class AseDataReader:
                 if 'bader_charge' in atoms.arrays:
                     bader_charge = torch.tensor(atoms.arrays['bader_charge'], dtype=torch.float)
                     atoms_data['bader_charge'] = bader_charge
-            else:
-                empty_array = np.zeros(len(atoms))
-                empty_array[:] = np.nan
-                atoms_data['bader_charge'] = torch.from_numpy(empty_array)
+                else:
+                    empty_array = np.zeros(len(atoms))
+                    empty_array[:] = np.nan
+                    atoms_data['bader_charge'] = torch.from_numpy(empty_array)
   
         return atoms_data
             

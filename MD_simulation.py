@@ -12,8 +12,8 @@ import torch
 params_md = {'temperature': 1000, # The temperature of the MD simulation
              'friction_term': 0.02, # Frictional term in the Langevin equation
              'time_step': 1, # Time step for the MD simulation
-             'dump_step': 100, # Step interval for saving the trajectory
-             'max_step': 10000} # Number of steps we want the simulation to run for
+             'dump_step': 1000, # Step interval for saving the trajectory
+             'max_step': 1000000} # Number of steps we want the simulation to run for
 
 # Set class for ML calculator
 device_global = 'cuda' if torch.cuda.is_available() else 'cpu'
