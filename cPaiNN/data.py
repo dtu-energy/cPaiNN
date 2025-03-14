@@ -1,9 +1,7 @@
 from ase.io import read, write, Trajectory
 import torch
 from typing import List, Union
-import asap3
 import numpy as np
-from scipy.spatial import distance_matrix
 from ase import Atoms
 
 class AseDataReader:
@@ -43,21 +41,26 @@ class AseDataReader:
     def __call__(self, atoms:Atoms) -> dict:
         atoms_data = {
             'num_atoms': torch.tensor([atoms.get_global_number_of_atoms()]),
-            'elems': torch.tensor(atoms.numbers),
+            'elems': torch.tensor(atoms.numbers, dtype=torch.int),
             'coord': torch.tensor(atoms.positions, dtype=torch.float),
         }
         
         # Get neighborlist
-        if atoms.pbc.any():
-            pairs, n_diff = self.get_neighborlist(atoms)                
-            atoms_data['cell'] = torch.tensor(atoms.cell[:], dtype=torch.float)
-        else:
-            pairs, n_diff = self.get_neighborlist_simple(atoms)
-            
+        #if atoms.pbc.any():
+            #pairs, n_diff = self.get_neighborlist(atoms)                
+        #    pairs, n_diff = self.get_neighborlist_costum(atoms)         
+        #    atoms_data['cell'] = torch.tensor(atoms.cell[:], dtype=torch.float)
+        #else:
+        #    pairs, n_diff = self.get_neighborlist_simple(atoms)
+
+        # Get neighborlist using matscipy, which results the same as ASAP3 and is more or less as fast
+        pairs, n_diff = self.get_neighborlist_matscipy(atoms,pbc=atoms.pbc)
+        atoms_data['cell'] = torch.tensor(atoms.cell[:], dtype=torch.float)
+
         # Add neighborlist to atoms_data
         atoms_data['pairs'] = torch.from_numpy(pairs).int()
         atoms_data['n_diff'] = torch.from_numpy(n_diff).float()
-        atoms_data['num_pairs'] = torch.tensor([pairs.shape[0]])
+        atoms_data['num_pairs'] = torch.tensor([pairs.shape[0]]).int()
         
         # Get properties
         # Energy, if there is no calculator it will raise an exception and return atoms_data
@@ -116,8 +119,60 @@ class AseDataReader:
             pairs (np.ndarray): pair indices
             n_diff (np.ndarray): difference in coordinates between neighboring atoms    
         """    
+        import asap3
 
         nl = asap3.FullNeighborList(self.cutoff, atoms)
+        pair_i_idx = []
+        pair_j_idx = []
+        n_diff = []
+        for i in range(len(atoms)):
+            indices, diff, _ = nl.get_neighbors(i)
+            pair_i_idx += [i] * len(indices)               # local index of pair i
+            pair_j_idx.append(indices)   # local index of pair j
+            n_diff.append(diff)
+
+        pair_j_idx = np.concatenate(pair_j_idx)
+        pairs = np.stack((pair_i_idx, pair_j_idx), axis=1)
+        n_diff = np.concatenate(n_diff)
+        
+        return pairs, n_diff
+    
+
+    def get_neighborlist_costum(self, atoms:Atoms)->tuple:
+        """
+        Get neighborlist using ASAP3 FullNeighborList class.
+        Use the given cutoff unless, the cell is too small, then we redefine the cutoff to just below the height of the cell.
+
+        Args:
+            atoms (ASE atoms object): atoms object
+
+        Returns:
+            pairs (np.ndarray): pair indices
+            n_diff (np.ndarray): difference in coordinates between neighboring atoms    
+        """    
+        import asap3
+
+        try:
+            nl = asap3.FullNeighborList(cutoff, atoms)
+        except:
+            # Define the cell matrix
+            cell_matrix = atoms.get_cell().array
+
+            # Compute the volume of the unit cell
+            volume = atoms.get_volume()
+
+            # Choose a base for the height calculation           
+            base_area_1 = np.linalg.norm(np.cross(cell_matrix[0], cell_matrix[1]))
+            base_area_2 = np.linalg.norm(np.cross(cell_matrix[1], cell_matrix[2]))
+            base_area_3 = np.linalg.norm(np.cross(cell_matrix[2], cell_matrix[0]))
+            base_area = np.max([base_area_1, base_area_2, base_area_3])
+
+            # Set the cutoff to the height
+            cutoff = volume / base_area
+            cutoff = cutoff - cutoff*0.01
+            # Create the neighbor list
+            nl = asap3.FullNeighborList(cutoff, atoms)
+
         pair_i_idx = []
         pair_j_idx = []
         n_diff = []
@@ -144,6 +199,7 @@ class AseDataReader:
             pairs (np.ndarray): pair indices
             n_diff (np.ndarray): difference in coordinates between neighboring atoms
         """
+        from scipy.spatial import distance_matrix
 
         pos = atoms.get_positions()
         dist_mat = distance_matrix(pos, pos)
@@ -153,6 +209,66 @@ class AseDataReader:
         n_diff = pos[pairs[:, 1]] - pos[pairs[:, 0]]
         
         return pairs, n_diff
+    
+    def get_neighborlist_matscipy(self, atoms,pbc):
+        """
+        Get neighborlist using matScipy neighborlist. Code taken from Mace: https://github.com/ACEsuit/mace
+
+        Args:
+            atoms (ASE atoms object): atoms object
+            pbc (tuple): periodic boundary conditions
+        
+        Returns:
+            edge_index (np.ndarray): edge indices
+            shifts (np.ndarray): shifts
+        """
+        from matscipy.neighbours import neighbour_list
+        # Set pbc if not provided
+        if pbc is None:
+            pbc = (False, False, False)
+
+        positions = atoms.get_positions()
+        cell = atoms.get_cell()
+
+        if cell is None or cell.any() == np.zeros((3, 3)).any():
+            cell = np.identity(3, dtype=float)
+
+        assert len(pbc) == 3 and all(isinstance(i, (bool, np.bool_)) for i in pbc)
+        assert cell.shape == (3, 3)
+
+        pbc_x = pbc[0]
+        pbc_y = pbc[1]
+        pbc_z = pbc[2]
+        identity = np.identity(3, dtype=float)
+        max_positions = np.max(np.absolute(positions)) + 1
+        # Extend cell in non-periodic directions
+        # For models with more than 5 layers, the multiplicative constant needs to be increased.
+        temp_cell = np.copy(cell)
+        if not pbc_x:
+            temp_cell[0, :] = max_positions * 5 * self.cutoff * identity[0, :]
+        if not pbc_y:
+            temp_cell[1, :] = max_positions * 5 * self.cutoff * identity[1, :]
+        if not pbc_z:
+            temp_cell[2, :] = max_positions * 5 * self.cutoff * identity[2, :]
+
+        sender, receiver,tot_diff, n_diff, unit_shifts = neighbour_list(
+            quantities="ijdDS",
+            pbc=pbc,
+            cell=temp_cell,
+            positions=positions,
+            cutoff=self.cutoff,
+            # self_interaction=True,  # we want edges from atom to itself in different periodic images
+            # use_scaled_positions=False,  # positions are not scaled positions
+        )
+
+        # Build output
+        edge_index = np.stack((sender, receiver)).T  # [n_edges,2 ]
+
+        # From the docs: With the shift vector S, the distances D between atoms can be computed from
+        # D = positions[j]-positions[i]+S.dot(cell)
+        #shifts = np.dot(unit_shifts, cell)  # [n_edges, 3]
+
+        return edge_index, n_diff
 
 class AseDataset(torch.utils.data.Dataset):
     """
