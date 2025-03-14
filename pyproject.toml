@@ -24,6 +24,7 @@ dependencies = [
     "ase==3.23",
     "pandas==2.2.2",
     "asap3",
+    "matscipy",
     "torch<=2.1.2",
     "scipy==1.14.1",
     "numpy==1.26.4",
