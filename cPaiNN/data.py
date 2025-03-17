@@ -292,14 +292,14 @@ class AseDataset(torch.utils.data.Dataset):
         self.ase_db = ase_db
         if isinstance(self.ase_db, str):
             try:
-                atom_list = Trajectory(self.ase_db )
+                self.db = Trajectory(self.ase_db )
             except:
-                atom_list = read(self.ase_db ,index=':')                
+                self.db = read(self.ase_db ,index=':')                
+        else:
+            self.db = ase_db
         
         self.cutoff = cutoff
         self.atoms_reader = AseDataReader(cutoff, compute_forces, compute_stress, charge_key)
-        atom_data = [self.atoms_reader(atoms) for atoms in atom_list]
-        self.atom_data = atom_data
         
     def __len__(self):
         import subprocess
@@ -330,10 +330,10 @@ class AseDataset(torch.utils.data.Dataset):
         Returns:
             atoms_data (dict): dictionary of tensors
         """
-        #atoms =    
-        #atoms = self.db[idx]
-        #atoms_data = self.atoms_reader(atoms)
-        return self.atom_data[idx]
+
+        atoms = self.db[idx]
+        atoms_data = self.atoms_reader(atoms)
+        return atoms_data
 
 def cat_tensors(tensors: List[torch.Tensor])->torch.Tensor:
     """
