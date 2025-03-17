@@ -302,23 +302,8 @@ class AseDataset(torch.utils.data.Dataset):
         self.atoms_reader = AseDataReader(cutoff, compute_forces, compute_stress, charge_key)
         
     def __len__(self):
-        import subprocess
-        if self.ase_db.endswith('.xyz'):
-            # Define the command
-            cmd = f"grep -c '^Lattice' {self.ase_db}"
-
-            # Run the command and capture output
-            result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
-
-            # Extract the integer value from the output
-            total_len = int(result.stdout.strip())
-
-        elif self.ase_db.endswith('.traj'):
-            total_len = len(Trajectory(self.ase_db))
-        else:
-            raise ValueError('File format not supported, please use .traj or .xyz')
     
-        return total_len
+        return len(self.db)
                 
     def __getitem__(self, idx:int)->dict:
         """
