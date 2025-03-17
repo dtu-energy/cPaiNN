@@ -333,7 +333,7 @@ class AseDataset(torch.utils.data.Dataset):
         #atoms =    
         #atoms = self.db[idx]
         #atoms_data = self.atoms_reader(atoms)
-        return self.atom_list[idx]
+        return self.atom_data[idx]
 
 def cat_tensors(tensors: List[torch.Tensor])->torch.Tensor:
     """
