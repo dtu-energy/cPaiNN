@@ -63,6 +63,7 @@ class AseDataReader:
         atoms_data['num_pairs'] = torch.tensor([pairs.shape[0]]).int()
         
         # Get properties
+        #atoms_data['energy'] = energy
         # Energy, if there is no calculator it will raise an exception and return atoms_data
         try:
             energy = torch.tensor([atoms.get_potential_energy()], dtype=torch.float)

@@ -76,7 +76,7 @@ for system_name, outcar_dir in list_root_dir.items():
         print('Relaxing with ',ml_class)
         relaxer = ml_model[ml_class]
         atom = atom_init.copy()
-        traj_path = ml_class+f'_{system_name}_traj.traj'
+        traj_path = ml_class+f'_{system_name}_traj.xyz'
         log_path = ml_class+f'_{system_name}_log_.txt'
         relax_results=relaxer.relax(atom, fmax=fmax, steps=steps,
                                     traj_file=traj_path, log_file=log_path, interval=1)
