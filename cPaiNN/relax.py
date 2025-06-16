@@ -162,6 +162,13 @@ class ML_Relaxer:
             ensemble = False
             model = CHGNet.load()
             calc = CHGNetCalculator(model=model,use_device=self.device)
+        elif self.calc_name == 'chgnet_model':
+            from chgnet.model.dynamics import CHGNetCalculator
+            from chgnet.model import CHGNet
+            print('Using CHGNet model')
+            ensemble = False
+            model = CHGNet.from_file(self.calc_paths)
+            calc = CHGNetCalculator(model=model,use_device=self.device)
         elif self.calc_name == 'mace_large':
             from mace.calculators import mace_mp
             print('Using Mace-MP-0 large model')

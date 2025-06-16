@@ -21,14 +21,14 @@ classifiers = [
 ]
 
 dependencies = [
-    "ase==3.23",
-    "pandas==2.2.2",
+    "ase",
+    "pandas",
     "asap3",
     "matscipy",
-    "torch<=2.1.2",
-    "scipy==1.14.1",
-    "numpy==1.26.4",
-    "toml==0.10.2",
+    "torch",
+    "scipy",
+    "numpy",
+    "toml",
 ]
 
 [project.urls]

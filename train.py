@@ -265,7 +265,6 @@ def main():
     ))
 
     # compute normalization statistics if needed
-    logging.info(args.target_mean, args.target_stddev)
     if args.normalization:
         if args.target_mean is not None and args.target_stddev is not None:
             target_mean = torch.tensor([args.target_mean])

@@ -243,7 +243,6 @@ def eval_model(model:PainnModel, dataloader:AseDataset, device:str, args:argpars
                 args.forces_weight * forces_loss
                 + (1 - args.forces_weight) * energy_loss
                 + args.stress_weight * stress_loss
-                #+ args.stress_weight * stress_loss
                 + args.charge_weight * charge_loss
         )
         
@@ -299,11 +298,10 @@ def eval_model(model:PainnModel, dataloader:AseDataset, device:str, args:argpars
                 bader_charge_diff = torch.tensor(0.0)
             else:
                 bader_charge_diff = target - pred
-
-            bader_charge_running_ae += np.sum(np.abs(bader_charge_diff), axis=0)
-            bader_charge_running_se += np.sum(
-                np.square(bader_charge_diff), axis=0
-            )
+                bader_charge_running_ae += np.sum(np.abs(bader_charge_diff), axis=0)
+                bader_charge_running_se += np.sum(
+                    np.square(bader_charge_diff), axis=0
+                )
 
         elif isinstance(charge_key,str):
             if charge_key == 'bader_charge':
@@ -316,14 +314,19 @@ def eval_model(model:PainnModel, dataloader:AseDataset, device:str, args:argpars
                     charge_diff = torch.tensor(0.0)
                 else:
                     charge_diff = target - pred
+                    charge_diff = charge_diff.detach().cpu().numpy()
+                    charge_running_ae += np.sum(np.abs(charge_diff), axis=0)
+                    charge_running_se += np.sum(
+                        np.square(charge_diff), axis=0
+                    )
             else:
                 charge_targets = batch[charge_key].detach().cpu()
                 charge_diff = charge_targets - outputs[charge_key]
-            charge_diff = charge_diff.detach().cpu().numpy()
-            charge_running_ae += np.sum(np.abs(charge_diff), axis=0)
-            charge_running_se += np.sum(
-                np.square(charge_diff), axis=0
-            )
+                charge_diff = charge_diff.detach().cpu().numpy()
+                charge_running_ae += np.sum(np.abs(charge_diff), axis=0)
+                charge_running_se += np.sum(
+                    np.square(charge_diff), axis=0
+                )
     
     # Calculate mean absolute error and root mean squared error
     evaluation = {}
