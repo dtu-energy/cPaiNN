@@ -158,7 +158,7 @@ for ml_name, ml_class in ml_model.items():
     from ase.io import write,read
     total_image = []
     for image in ml_neb_traj:
-        if 'bader_charge' not in image.calc.results.keys():
+        if 'bader_charge' in image.calc.results.keys():
             image.arrays['bader_charge'] = np.zeros(len(image))
         total_image.append(image)
     write(f'{ml_neb_folder}/{ml_name}_neb_last.xyz', total_image)
