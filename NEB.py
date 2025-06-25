@@ -153,5 +153,15 @@ for ml_name, ml_class in ml_model.items():
     ax.text(1.05, 0.98-0.3*count, textstr, transform=ax.transAxes, fontsize=14,  
     verticalalignment='top', bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
     count += 1
-        
+    
+    # Save the results
+    from ase.io import write,read
+    total_image = []
+    for image in ml_neb_traj:
+        if 'bader_charge' not in image.calc.results.keys():
+            image.arrays['bader_charge'] = np.zeros(len(image))
+        total_image.append(image)
+    write(f'{ml_neb_folder}/{ml_name}_neb_last.xyz', total_image)
+
+    # Save image
     plt.savefig('NEB.png',dpi=300,bbox_inches='tight')
