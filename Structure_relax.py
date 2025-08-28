@@ -6,7 +6,7 @@ import pandas as pd
 
 # Setup paths
 # Model directory (can be a list of directories)
-model_dir = '/home/energy/mahpe/Published_code/additional_polyanion_cathode_dataset/Pretrained models/Polyanion_ionicsteps_magmom_bader_512_4' 
+model_dir = '/home/energy/mahpe/Published_code/additional_polyanion_cathode_dataset/Pretrained_models_cPaiNN/Polyanion_ionicsteps_magmom_bader_512_4' 
 
 # Set class for ML calculator
 relax_cell = True

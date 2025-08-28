@@ -20,7 +20,7 @@ device_global = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 # Import arguments
 model_name = 'cpainn'
-model_path = '/home/energy/mahpe/Published_code/additional_polyanion_cathode_dataset/Pretrained models/Polyanion_ionicsteps_magmom_bader_512_4' 
+model_path  = '/home/energy/mahpe/Published_code/additional_polyanion_cathode_dataset/Pretrained_models_cPaiNN/Polyanion_ionicsteps_magmom_bader_512_4' 
 system_path = 'Relax_examples/Na2FeMnNiSiO4/OUTCAR'
 system_name = 'Na2FeMnNiSiO4'
 

@@ -23,7 +23,7 @@ classifiers = [
 dependencies = [
     "ase",
     "pandas",
-    "asap3",
+    #"asap3",
     "matscipy",
     "torch",
     "scipy",
