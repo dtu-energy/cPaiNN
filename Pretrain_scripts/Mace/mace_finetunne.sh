@@ -1,0 +1,33 @@
+#!/bin/bash
+
+mace_run_train \
+    --name="exp_large" \
+    --seed=111 \
+    --log_dir="logs_runchkpt" \
+    --model_dir="." \
+    --checkpoints_dir="chkpt_h5" \
+    --results_dir="results_runchkpt" \
+    --foundation_model="mace-large-density-agnesi-stress.model" \
+    --multiheads_finetuning=False \
+    --train_file="train_REF.xyz" \
+    --valid_file="valid_REF.xyz" \
+    --test_file="test_REF.xyz" \
+    --energy_weight=1.0 \
+    --forces_weight=99.0 \
+    --E0s='{11:-0.00850613, 27:1.42231373, 26:-0.25147872, 28:5.19751556, 25:-4.56090422, 8:-0.01400954, 15:-0.01380083, 16:-0.01578118, 14:-0.01138382}' \
+    --lr=0.001 \
+    --batch_size=16 \
+    --valid_batch_size=16 \
+    --max_num_epochs=50 \
+    --ema \
+    --ema_decay=0.99 \
+    --amsgrad \
+    --default_dtype="float64" \
+    --scaling="rms_forces_scaling" \
+    --compute_stress=True \
+    --keep_checkpoints \
+    --save_all_checkpoints \
+    --restart_latest \
+    --save_cpu \
+    --device=cuda \
+    --enable_cueq=True
