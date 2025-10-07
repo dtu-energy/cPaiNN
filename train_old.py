@@ -58,7 +58,7 @@ def get_arguments(arg_list=None):
     parser.add_argument(
         "--max_steps",
         type=int,
-        help="Maximum number of optimisation epochs",
+        help="Maximum number of optimisation steps",
     )
     parser.add_argument(
         "--device",
@@ -123,7 +123,7 @@ def get_arguments(arg_list=None):
     parser.add_argument(
         "--stop_patience",
         type=int,
-        help="Stop training when validation loss is larger than best loss for 'stop_patience' epochs",
+        help="Stop training when validation loss is larger than best loss for 'stop_patience' steps",
     )
     parser.add_argument(
         "--random_seed",
@@ -301,7 +301,7 @@ def main():
     if args.plateau_scheduler:
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', factor=0.5, patience=10)
     else:
-        scheduler_fn = lambda epoch: 0.96 ** (epoch / 100000)
+        scheduler_fn = lambda step: 0.96 ** (step / 100000)
         scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, scheduler_fn)
     early_stop = EarlyStopping(patience=args.stop_patience)    
 
@@ -312,6 +312,7 @@ def main():
     # used for smoothing loss
     prev_loss = None
     best_val_loss = np.inf
+    step = 0
     training_time = 0    
 
     # Load model if needed
@@ -393,55 +394,84 @@ def main():
             running_loss_count += batch["energy"].shape[0]
             training_time += time.time() -  start
 
-        # Validate and save model for each log epoch
-        if (epoch % args.log_interval == 0) or ((epoch + 1) == args.max_steps):
-            # start timer
-            eval_start = time.time()
-            
-            # Calculate training loss
-            train_loss = running_loss / running_loss_count # loss per epoch
-            running_loss = running_loss_count = 0 # reset running loss
+            # Validate and save model for each log step
+            if (step % args.log_interval == 0) or ((step + 1) == args.max_steps):
+                # start timer
+                eval_start = time.time()
+                
+                # Calculate training loss
+                train_loss = running_loss / running_loss_count # loss per sample
+                running_loss = running_loss_count = 0 # reset running loss
 
-            # Evaluate model on validation set
-            eval_dict = eval_model(net, val_loader, device, args,criterion=criterion)
-            eval_formatted = ", ".join(
-                ["{}={:.5f}".format(k, v) for (k, v) in eval_dict.items()]
-            )
-
-            # Loss smoothing
-            eval_loss = eval_dict["sqrt(val_loss)"]
-            smooth_loss = eval_loss if prev_loss == None else 0.9 * eval_loss + 0.1 * prev_loss
-            prev_loss = smooth_loss
-
-            # Log results
-            logging.info(
-                "Epoch={}, {}, sqrt(train_loss)={:.3f}, sqrt(smooth_loss)={:.3f}, patience={:3d}, training time={:.3f} min, eval time={:.3f} min".format(
-                    epoch,
-                    eval_formatted,
-                    math.sqrt(train_loss),
-                    math.sqrt(smooth_loss),
-                    early_stop.counter,
-                    training_time / 60,
-                    (time.time() - eval_start) / 60,
+                # Evaluate model on validation set
+                eval_dict = eval_model(net, val_loader, device, args,criterion=criterion)
+                eval_formatted = ", ".join(
+                    ["{}={:.5f}".format(k, v) for (k, v) in eval_dict.items()]
                 )
-            )
 
-            # initialize training time
-            training_time = 0
+                # Loss smoothing
+                eval_loss = eval_dict["sqrt(val_loss)"]
+                smooth_loss = eval_loss if prev_loss == None else 0.9 * eval_loss + 0.1 * prev_loss
+                prev_loss = smooth_loss
 
-            # reduce learning rate
-            if args.plateau_scheduler:
-                scheduler.step(smooth_loss)
-            
-            # Save checkpoint
-            if not early_stop(math.sqrt(smooth_loss), best_val_loss):
-                best_val_loss = math.sqrt(smooth_loss)
+                # Log results
+                logging.info(
+                    "step={}, {}, sqrt(train_loss)={:.3f}, sqrt(smooth_loss)={:.3f}, patience={:3d}, training time={:.3f} min, eval time={:.3f} min".format(
+                        step,
+                        eval_formatted,
+                        math.sqrt(train_loss),
+                        math.sqrt(smooth_loss),
+                        early_stop.counter,
+                        training_time / 60,
+                        (time.time() - eval_start) / 60,
+                    )
+                )
+
+                # initialize training time
+                training_time = 0
+
+                # reduce learning rate
+                if args.plateau_scheduler:
+                    scheduler.step(smooth_loss)
+                
+                # Save checkpoint
+                if not early_stop(math.sqrt(smooth_loss), best_val_loss):
+                    best_val_loss = math.sqrt(smooth_loss)
+                    torch.save(
+                        {
+                            "model": net.state_dict(),
+                            "optimizer": optimizer.state_dict(),
+                            "scheduler": scheduler.state_dict(),
+                            "step": step,
+                            "best_val_loss": best_val_loss,
+                            "node_size": args.node_size,
+                            "num_layer": args.num_interactions,
+                            "cutoff": args.cutoff,
+                            "compute_forces": args.compute_forces,
+                            "compute_stress": args.compute_stress,
+                            "compute_magmom": args.compute_magmom,
+                            "compute_bader_charge": args.compute_bader_charge,
+                        },
+                        os.path.join(args.output_dir, "best_model.pth"),
+                    )
+                else:
+                    sys.exit(0)
+
+            step += 1
+
+            # Check if max steps reached
+            if not args.plateau_scheduler:
+                scheduler.step()
+
+            # Check if max steps reached
+            if step >= args.max_steps:
+                logging.info("Max steps reached, exiting")
                 torch.save(
                     {
                         "model": net.state_dict(),
                         "optimizer": optimizer.state_dict(),
                         "scheduler": scheduler.state_dict(),
-                        "epoch": epoch,
+                        "step": step,
                         "best_val_loss": best_val_loss,
                         "node_size": args.node_size,
                         "num_layer": args.num_interactions,
@@ -451,36 +481,9 @@ def main():
                         "compute_magmom": args.compute_magmom,
                         "compute_bader_charge": args.compute_bader_charge,
                     },
-                    os.path.join(args.output_dir, "best_model.pth"),
+                    os.path.join(args.output_dir, "exit_model.pth"),
                 )
-            else:
                 sys.exit(0)
-
-        # Check if max epochs reached
-        if not args.plateau_scheduler:
-            scheduler.step()
-
-        # Check if max epochs reached
-        if epoch >= args.max_steps:
-            logging.info("Max epochs reached, exiting")
-            torch.save(
-                {
-                    "model": net.state_dict(),
-                    "optimizer": optimizer.state_dict(),
-                    "scheduler": scheduler.state_dict(),
-                    "epoch": epoch,
-                    "best_val_loss": best_val_loss,
-                    "node_size": args.node_size,
-                    "num_layer": args.num_interactions,
-                    "cutoff": args.cutoff,
-                    "compute_forces": args.compute_forces,
-                    "compute_stress": args.compute_stress,
-                    "compute_magmom": args.compute_magmom,
-                    "compute_bader_charge": args.compute_bader_charge,
-                },
-                os.path.join(args.output_dir, "exit_model.pth"),
-            )
-            sys.exit(0)
 
 if __name__ == "__main__":
     main()

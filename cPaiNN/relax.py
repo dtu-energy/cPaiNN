@@ -1,4 +1,4 @@
-from ase.constraints import ExpCellFilter
+from ase.filters import ExpCellFilter, FrechetCellFilter
 from ase.optimize.bfgs import BFGS
 from ase.optimize.bfgslinesearch import BFGSLineSearch
 from ase.optimize.fire import FIRE
@@ -36,7 +36,7 @@ class ML_Relaxer:
         self,
         calc_name: str | str = "mace_large",
         calc_paths: str | None = None,
-        optimizer: Optimizer | str = "FIRE",
+        optimizer: Optimizer | str = "LBFGSLineSearch",
         device: str = "cuda",
         relax_cell: bool = True,
     ):
@@ -85,6 +85,7 @@ class ML_Relaxer:
         steps: int = 500,
         traj_file: str | None = None,
         log_file: str = "opt.log",
+        cell_relaxer='FrechetCellFilter',
         interval=1,
         verbose=False,
         **kwargs,
@@ -107,12 +108,18 @@ class ML_Relaxer:
         # Set the calculator
         atoms.set_calculator(self.calculator)
         if self.relax_cell:
-            atoms = ExpCellFilter(atoms)
+            if cell_relaxer == 'ExpCellFilter':
+                atoms = ExpCellFilter(atoms)
+            elif cell_relaxer == 'FrechetCellFilter':
+                atoms = FrechetCellFilter(atoms)
+            else:
+                raise ValueError(f"Unknown cell relaxer: {cell_relaxer}")
         optimizer = self.opt_class(atoms,trajectory=traj_file,logfile=log_file,**kwargs)
         optimizer.run(fmax=fmax, steps=steps)
         if isinstance(atoms, ExpCellFilter):
             atoms = atoms.atoms
-
+        if isinstance(atoms, FrechetCellFilter):
+            atoms = atoms.atoms
         if 'cpainn' in self.calc_name:
             atoms = self.predict(atoms)
 
@@ -315,20 +322,39 @@ class ML_Relaxer:
         elif self.calc_name == 'mace_large':
             from mace.calculators import mace_mp
             print('Using Mace-MP-0 large model')
-            calc = mace_mp(model="large", dispersion=False, default_dtype="float64", device=self.device)
+            try:
+                calc = mace_mp(model="large", dispersion=False, default_dtype="float64", device=self.device, enable_cueq=True)
+                print('Using Mace with cueq')
+            except:
+                calc = mace_mp(model="large", dispersion=False, default_dtype="float64", device=self.device, enable_cueq=False)
+                print('Using Mace without cueq')
         elif self.calc_name == 'mace_medium':
             from mace.calculators import mace_mp
             print('Using Mace-MP-0 medium model')
-            calc = mace_mp(model="medium", dispersion=False, default_dtype="float64", device=self.device)
+            try:
+                calc = mace_mp(model="medium", dispersion=False, default_dtype="float64", device=self.device, enable_cueq=True)
+                print('Using Mace with cueq')
+            except:
+                calc = mace_mp(model="medium", dispersion=False, default_dtype="float64", device=self.device, enable_cueq=False)
+                print('Using Mace without cueq')
         elif self.calc_name == 'mace_small':
             from mace.calculators import mace_mp
             print('Using Mace-MP-0 small model')
-            calc = mace_mp(model="small", dispersion=False, default_dtype="float64", device=self.device)
+            try:
+                calc = mace_mp(model="small", dispersion=False, default_dtype="float64",device=self.device,enable_cueq=True)
+                print('Using Mace with cueq')
+            except:
+                calc =  mace_mp(model="small", dispersion=False, default_dtype="float64",device=self.device,enable_cueq=False)
+                print('Using Mace without cueq')
         elif self.calc_name == 'mace_model':
             from mace.calculators import MACECalculator
             print('Using Mace personal model')
-            calc =  MACECalculator(model_paths=self.calc_paths,device=self.device, default_dtype="float64")
-        
+            try:
+                calc =  MACECalculator(model_paths=self.calc_paths,device=self.device,enable_cueq=True, default_dtype="float64")
+                print('Using Mace with cueq')
+            except:
+                calc =  MACECalculator(model_paths=self.calc_paths,device=self.device,enable_cueq=False, default_dtype="float64")       
+                print('Using Mace without cueq')
         elif self.calc_name == 'm3gnet':
             from m3gnet.models import Potential, M3GNet, M3GNetCalculator
             potential = Potential(M3GNet.load())
@@ -336,6 +362,13 @@ class ML_Relaxer:
             calc = M3GNetCalculator(potential=potential, stress_weight=0.01)
         elif self.calc_name == 'mace_omat':
             from mace.calculators import mace_mp
+
+            try:
+                calc = mace_mp(model="medium-omat-0", dispersion=False, default_dtype="float64",device=self.device,enable_cueq=True)
+                print('Using Mace with cueq')
+            except:
+                calc =  mace_mp(model="medium-omat-0", dispersion=False, default_dtype="float64",device=self.device,enable_cueq=False)
+                print('Using Mace without cueq')
             calc = mace_mp(model="medium-omat-0", dispersion=False, default_dtype="float64",device=self.device)
         else:
             raise RuntimeError('Calculator not found!')

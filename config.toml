@@ -5,7 +5,7 @@ node_size = 64     # The size of the hidden layers in the message pasing neural 
 num_interactions = 4     # The number of message updates in the message parsing neural network
 output_dir = 'Polyanion_bader_magmom_stress_64_4'     # The output directory, where the model files are safed
 dataset = 'Combined.xyz'     # The path to the training data. Must be in .xyz file, if bader charges should be trained
-max_steps = 1500000     # Maximum number of epochs
+max_steps = 150     # Maximum number of epochs
 batch_size = 20     # The batch size per epoch
 initial_lr = 0.0001     # The initial learning rate (will be updated based on the training loss during the training)
 forces_weight = 0.98     # The weight of the force loss
@@ -16,7 +16,7 @@ log_interval = 2000     # The epoch interval for saving the
 plateau_scheduler = true     # Using PyTorch ReduceLROnPlateau (true) or LambdaLR (false) to vary the learning rate based on the training loss 
 normalization = true      # Normalize the total energy based on the whole dataset (true) or not (false)
 atomwise_normalization = true      # Using atomwise normalization (true) or datawise normalization (false). The normalization parameter need to be true to use this parameter
-stop_patience = 1000     # Number of epochs without any training loss improvements before the traning terminates
+stop_patience = 10     # Number of epochs without any training loss improvements before the traning terminates
 
 random_seed = 0     # The random seed used by PyTorch
 compute_forces = true     # Train with forces
