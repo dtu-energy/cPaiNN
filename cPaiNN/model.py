@@ -374,7 +374,9 @@ class PainnModel(nn.Module):
         
         # Readout function to get the energy
         node_scalar = self.readout_mlp(node_scalar)
+        result_dict['node_energy'] = node_scalar
         node_scalar = node_scalar.squeeze()
+        
 
     	# Sum up the energy of the atoms in the structure
         image_idx = torch.arange(input_dict['num_atoms'].shape[0],

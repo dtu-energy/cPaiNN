@@ -18,6 +18,14 @@ from ase import units
 import numpy as np
 import logging
 
+class CallsCounter:
+    def __init__(self, func):
+        self.calls = 0
+        self.func = func
+    def __call__(self, *args, **kwargs):
+        self.calls += 1
+        self.func(*args, **kwargs)
+
 OPTIMIZERS = {
     "FIRE": FIRE,
     "BFGS": BFGS,
@@ -197,13 +205,6 @@ class ML_Relaxer:
             friction=friction,
             logfile=log_file)
         
-        class CallsCounter:
-            def __init__(self, func):
-                self.calls = 0
-                self.func = func
-            def __call__(self, *args, **kwargs):
-                self.calls += 1
-                self.func(*args, **kwargs)
         # set logger
         logger = logging.getLogger(__file__)
         logger.setLevel(logging.DEBUG)
@@ -319,6 +320,16 @@ class ML_Relaxer:
             ensemble = False
             model = CHGNet.from_file(self.calc_paths)
             calc = CHGNetCalculator(model=model,use_device=self.device)
+        elif self.calc_name == 'mpa':
+            from mace.calculators import mace_mp
+            print('Using Mace-MP-0 medium MPA')
+            try:
+                calc = mace_mp(model="medium-mpa-0", dispersion=False, default_dtype="float64", device=self.device, enable_cueq=True)
+                print('Using Mace with cueq')
+            except:
+                calc = mace_mp(model="medium-mpa-0", dispersion=False, default_dtype="float64", device=self.device, enable_cueq=False)
+                print('Using Mace without cueq')
+        
         elif self.calc_name == 'mace_large':
             from mace.calculators import mace_mp
             print('Using Mace-MP-0 large model')

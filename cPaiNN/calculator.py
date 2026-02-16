@@ -61,6 +61,7 @@ class MLCalculator(Calculator):
         results = {}
 
         # Convert outputs to calculator format
+        results['node_energy'] = model_results['node_energy'].detach().cpu().numpy()
         results["energy"] = (
             model_results["energy"][0].detach().cpu().numpy().item()
             * self.energy_scale
