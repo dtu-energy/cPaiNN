@@ -158,7 +158,7 @@ python NEB.py
 ## Generative Algorithm (GA)
 
 ```bash
-python NEB.py
+python GA.py
 ```
 
 ---
