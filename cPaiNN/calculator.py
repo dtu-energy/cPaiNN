@@ -4,6 +4,86 @@ import numpy as np
 from ase import Atoms
 import torch
 from typing import List
+class Chargebased_calculator(Calculator):
+    """
+    Calculator class for PyTorch models.
+
+    Args:
+        model (torch.nn.Module): PyTorch model
+        energy_scale (float): energy scaling factor
+        forces_scale (float): forces scaling factor
+        charge_scale (float): charge scaling factor
+        stress_scale (float): stress scaling factor
+    """
+    implemented_properties = ["energy", "forces","stress","magmoms","bader_charge"]
+
+    def __init__(
+        self,
+        charge_model: Calculator,
+        main_model: Calculator,
+        charge_mapper: dict,
+        **kwargs
+    ):
+        super().__init__(**kwargs)
+
+        self.main_model = main_model
+        self.charge_model = charge_model
+        self.charge_mapper = charge_mapper['mapper']
+        self.charge_key = charge_mapper["charge_key"]
+        self.energy_scale = 1.0
+        self.forces_scale = 1.0
+        self.stress_scale = 1.0
+
+    def calculate(self, atoms:Atoms=None, properties:List[str]=["energy"], system_changes:List[str]=all_changes) -> None:
+        """
+        Args:
+            atoms (ase.Atoms): ASE atoms object.
+            properties (list of str): do not use this, no functionality
+            system_changes (list of str): List of changes for ASE.
+        """
+        # First call original calculator to set atoms attribute
+        # (see https://wiki.fysik.dtu.dk/ase/_modules/ase/calculators/calculator.html#Calculator)
+
+        # Create a copy of the input atoms object to compute charges using the charge model
+        self.atoms = atoms.copy()
+        atoms_init = atoms.copy()
+        atoms_init.calc = self.charge_model    
+
+        # Compute charges using the charge model
+        atoms_init.get_potential_energy()
+        charge_results = atoms_init.calc.results[self.charge_key]
+
+        # Loop over the ions and map them to new symbols based on the charge results and the provided mapper
+        for ion, mapper in self.charge_mapper.items():
+            # Get the charge mapper parameters
+            threshold = mapper['threshold']
+            high = mapper['high']
+            low = mapper['low']
+            
+            # Loop over the ions and map them to new symbols based on the charge results and the provided mapper
+            system_symbols = np.array(atoms_init.get_chemical_symbols())
+            ion_index = np.where(system_symbols==ion)[0]
+            for idx in ion_index:
+                if charge_results[idx] > threshold:
+                    atoms_init[idx].symbol = high
+                else:
+                    atoms_init[idx].symbol = low
+
+        # Compute energy, forces, and stress using the main model
+        atoms_final = atoms_init.copy()
+        atoms_final.calc = self.main_model
+        atoms_final.get_potential_energy()
+        print(atoms_init.calc.results.keys())
+        self.results = {
+            'energy':atoms_final.calc.results['energy']*self.energy_scale,
+            'forces':atoms_final.calc.results['forces']*self.forces_scale,
+            'stress':atoms_final.calc.results['stress']*self.stress_scale,}
+        if 'magmoms' in atoms_init.calc.results:
+            self.results['magmoms'] = atoms_init.calc.results['magmoms']
+        if 'bader_charge' in atoms_init.calc.results:
+            self.results['bader_charge'] = atoms_init.calc.results['bader_charge']
+
+
 
 class MLCalculator(Calculator):
     """

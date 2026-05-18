@@ -10,7 +10,10 @@ from ase.calculators.calculator import Calculator
 
 from ase.optimize.optimize import Optimizer
 from pathlib import Path
-from ase.neb import NEBTools,NEB
+try:
+    from ase.neb import NEBTools,NEB
+except ImportError:
+    from ase.mep import NEBTools,NEB
 from ase.io import write
 from ase.md.velocitydistribution import MaxwellBoltzmannDistribution
 from ase.md.langevin import Langevin
@@ -43,7 +46,7 @@ class ML_Relaxer:
     def __init__(
         self,
         calc_name: str | str = "mace_large",
-        calc_paths: str | None = None,
+        calc_paths: str | dict | None = None,
         optimizer: Optimizer | str = "LBFGSLineSearch",
         device: str = "cuda",
         relax_cell: bool = True,
@@ -51,7 +54,7 @@ class ML_Relaxer:
         """
         Args:
             calc_name (str): calculator name. Defaults to "mace_large".
-            calc_paths (str): path to the calculator. Defaults to None.
+            calc_paths (str or dict): path to the calculator. Defaults to None.
             optimizer (str or ase Optimizer): the optimization algorithm. Defaults to "FIRE".
             device (str): device to use. Defaults to "cuda".
             relax_cell (bool): whether to relax the lattice cell. Defaults to True.
@@ -130,6 +133,9 @@ class ML_Relaxer:
             atoms = atoms.atoms
         if 'cpainn' in self.calc_name:
             atoms = self.predict(atoms)
+        
+        if 'charge_model' in self.calc_name:
+            atoms = self.predict(atoms)
 
         return {
             "final_structure": atoms,
@@ -138,20 +144,52 @@ class ML_Relaxer:
     def NEB(self,
             initial_image: Atoms,
             final_image: Atoms,
-            relax_source=True, 
+            relax_source=True,
+            relax_cell=False,
             fmax: float = 0.1,
             steps: int = 500,
             N_images: int = 5,
             climb: bool = False,
-            traj_file: str = 'neb.traj',
+            init_traj_file: str = 'init_neb.xyz',
+            final_traj_file: str = 'final_neb.xyz',
+            traj_file: str = 'neb.xyz',
             log_file: str = "NEB.log",
         ):
 
         if relax_source:
             print('Relaxing the initial and final images before NEB')
-            # relax source
-            initial_image = self.relax(initial_image, fmax=fmax, steps=steps,log_file='Initial_image.log')['final_structure']
-            final_image = self.relax(final_image, fmax=fmax, steps=steps,log_file='Final_image.log')['final_structure']
+            # update relax_cell
+            self.relax_cell = relax_cell
+            # Safe copy of the initial and final images for later comparison
+            initial_parent = initial_image.copy()
+            final_parent = final_image.copy()
+
+            # Optimize the initial image
+            initial_image = self.relax(initial_image, fmax=fmax, steps=steps,log_file='Initial_image.log',traj_file=init_traj_file)['final_structure']
+    
+            # find the the atoms in the final image that are misplaced
+            atoms_misplaced = []
+            for a in initial_parent:
+                a_id = a.index
+                a_symbol = a.symbol
+                a_pos = a.position
+                # find the corresponding atom in the final traj
+                for b in final_parent:
+                    if b.symbol == a_symbol and np.linalg.norm(b.position - a_pos) < 0.1:
+                        break
+                else:
+                    atoms_misplaced.append(a_id)
+
+            # Creat final image from inital image by replacing the misplaced atoms with the corresponding atoms in the final traj
+            final_image = initial_image.copy()
+            for a_id in atoms_misplaced:
+                final_image[a_id].position = final_parent[a_id].position
+
+            # Optimize the final image without cell optimization
+            self.relax_cell = False   
+            final_image = self.relax(final_image, fmax=fmax, steps=steps,log_file='Final_image.log',traj_file=final_traj_file)['final_structure']
+        # 
+
 
         # Make a band consisting of N images
         images = [initial_image]
@@ -381,6 +419,12 @@ class ML_Relaxer:
                 calc =  mace_mp(model="medium-omat-0", dispersion=False, default_dtype="float64",device=self.device,enable_cueq=False)
                 print('Using Mace without cueq')
             calc = mace_mp(model="medium-omat-0", dispersion=False, default_dtype="float64",device=self.device)
+        elif self.calc_name == 'charge_model':
+            from cPaiNN.calculator import Chargebased_calculator
+            print('Using charge model')
+            calc = Chargebased_calculator(charge_model=self.calc_paths['charge_model'], main_model=self.calc_paths['main_model'], charge_mapper=self.calc_paths['charge_mapper'])
+        
+        
         else:
             raise RuntimeError('Calculator not found!')
         return calc
