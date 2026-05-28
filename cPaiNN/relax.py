@@ -434,6 +434,10 @@ class ML_Relaxer:
             from matgl.ext._ase_pyg import PESCalculator
             qet_nnp = matgl.load_model(self.calc_paths)
             calc = PESCalculator(potential=qet_nnp)
+        elif self.calc_name == 'emt':
+            from ase.calculators.emt import EMT
+            print('Using EMT calculator')
+            calc = EMT()
         else:
             raise RuntimeError('Calculator not found!')
         return calc
