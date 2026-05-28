@@ -424,7 +424,16 @@ class ML_Relaxer:
             print('Using charge model')
             calc = Chargebased_calculator(charge_model=self.calc_paths['charge_model'], main_model=self.calc_paths['main_model'], charge_mapper=self.calc_paths['charge_mapper'])
         
-        
+        elif self.calc_name == 'qet_matpes_pbe':
+            import matgl
+            from matgl.ext._ase_pyg import PESCalculator
+            qet_nnp = matgl.load_model("materialyze/QET-PES-MatPES-PBE-2025.2")
+            calc = PESCalculator(potential=qet_nnp)
+        elif self.calc_name == 'qet':
+            import matgl
+            from matgl.ext._ase_pyg import PESCalculator
+            qet_nnp = matgl.load_model(self.calc_paths)
+            calc = PESCalculator(potential=qet_nnp)
         else:
             raise RuntimeError('Calculator not found!')
         return calc
