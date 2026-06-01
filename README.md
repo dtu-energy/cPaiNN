@@ -155,7 +155,7 @@ python MD_simulation.py
 python NEB.py
 ```
 
-## Generative Algorithm (GA)
+## Genetic Algorithm (GA)
 
 ```bash
 python GA.py
