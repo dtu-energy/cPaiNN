@@ -428,12 +428,13 @@ class ML_Relaxer:
             import matgl
             from matgl.ext._ase_pyg import PESCalculator
             qet_nnp = matgl.load_model("materialyze/QET-PES-MatPES-PBE-2025.2")
-            calc = PESCalculator(potential=qet_nnp)
+            calc = PESCalculator(potential=qet_nnp,stress_unit='eV/A3')
+
         elif self.calc_name == 'qet':
             import matgl
             from matgl.ext._ase_pyg import PESCalculator
             qet_nnp = matgl.load_model(self.calc_paths)
-            calc = PESCalculator(potential=qet_nnp)
+            calc = PESCalculator(potential=qet_nnp,stress_unit='eV/A3')
         elif self.calc_name == 'emt':
             from ase.calculators.emt import EMT
             print('Using EMT calculator')
